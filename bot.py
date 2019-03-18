@@ -15,6 +15,7 @@ queue = []
 
 @bot.message_handler(func=lambda message: message.content_type != "text")
 def sticker(message):
+    print("asss")
     pass
 
 
@@ -34,12 +35,12 @@ def send_welcome(message):
     bot.send_message(message.chat.id, text, reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: message.text == "clear queue")
+@bot.message_handler(func=lambda message: message.content_type == "text" and message.text == "clear queue")
 def clear(message):
     queue = []
 
 
-@bot.message_handler(func=lambda message: message.text == "add me to queue")
+@bot.message_handler(func=lambda message: message.content_type == "text" and message.text == "add me to queue")
 def add_message(message):
     markup = types.ReplyKeyboardMarkup(row_width=2)
     for i in normal_murkup:
@@ -59,7 +60,7 @@ def add_message(message):
     bot.send_message(message.chat.id, text, reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: message.text == "delete me from queue")
+@bot.message_handler(func=lambda message: message.content_type == "text" and message.text == "delete me from queue")
 def delete_message(message):
     markup = types.ReplyKeyboardMarkup(row_width=2)
     for i in normal_murkup:
@@ -71,7 +72,7 @@ def delete_message(message):
         if user in queue:
             queue.pop(queue.index(user))
             text = "done"
-            if queue[0] != first:
+            if queue and queue[0] != first:
                 markup2 = types.InlineKeyboardMarkup(row_width=1)
                 btn = telebot.types.InlineKeyboardButton(text="i want to be next",
                                                          callback_data=str(user))
@@ -85,7 +86,7 @@ def delete_message(message):
     bot.send_message(message.chat.id, text, reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: message.text == "show queue")
+@bot.message_handler(func=lambda message: message.content_type == "text" and message.text == "show queue")
 def show_queue_message(message):
     markup = types.ReplyKeyboardMarkup(row_width=2)
     for i in normal_murkup:
@@ -103,7 +104,7 @@ def show_queue_message(message):
     bot.send_message(message.chat.id, text, reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: message.text[0:len("give space to")] == "give space to")
+@bot.message_handler(func=lambda message: message.content_type == "text" and message.text[0:len("give space to")] == "give space to")
 def give_space_message(message):
     markup = types.ReplyKeyboardMarkup(row_width=2)
     for i in normal_murkup:
@@ -115,12 +116,18 @@ def give_space_message(message):
 
     queue.insert(queue.index(user) + message.text[-1], queue.pop(user))
 
-    if queue[0] != first and len(queue) > 1:
+    if queue[0] != first and len(queue) >= 1:
         markup2 = types.InlineKeyboardMarkup(row_width=1)
         btn = telebot.types.InlineKeyboardButton(text="i want to be next",
                                                  callback_data=user)
         markup2.add(btn)
+        if len(queue) == 1:
+            markup2 = types.ReplyKeyboardMarkup(row_width=2)
+            for i in normal_murkup:
+                markup.add(i)
         bot.send_message(queue[0][1], "your turn", reply_markup=markup2)
+        if len(queue) > 2:
+            bot.send_message(queue[1][1], "your next", reply_markup=markup)
 
     text = "done"
 
@@ -134,12 +141,17 @@ def callback_query(call):
     :param call: telebot message object
     """
     message = call.message
+    markup = types.ReplyKeyboardMarkup(row_width=2)
+    for i in normal_murkup:
+        markup.add(i)
 
     markup2 = types.InlineKeyboardMarkup(row_width=1)
     btn = telebot.types.InlineKeyboardButton(text="i want to be next",
                                              callback_data=queue[0])
     markup2.add(btn)
     bot.send_message(queue[0][1], "your turn", reply_markup=markup2)
+    if len(queue) >= 2:
+        bot.send_message(queue[1][1], "your next", reply_markup=markup)
 
     queue.insert(queue.index(call.data) + 1, queue.pop(call.data))
 
